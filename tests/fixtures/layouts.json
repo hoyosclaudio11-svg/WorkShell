@@ -1,0 +1,34 @@
+{
+  "Ejemplo": {
+    "paneles": [
+      "metricas",
+      "escritorio"
+    ],
+    "ventanas": [
+      {
+        "etiqueta": "Bloc de notas",
+        "proceso": "notepad.exe",
+        "titulo": "Sin título - Bloc de notas",
+        "exe": "",
+        "args": "",
+        "lnk": "",
+        "x": 0.0,
+        "y": 0.0,
+        "ancho": 50.0,
+        "alto": 50.0
+      },
+      {
+        "etiqueta": "Calculadora",
+        "proceso": "CalculatorApp.exe",
+        "titulo": "Calculadora",
+        "exe": "",
+        "args": "",
+        "lnk": "",
+        "x": 50.0,
+        "y": 0.0,
+        "ancho": 50.0,
+        "alto": 50.0
+      }
+    ]
+  }
+}

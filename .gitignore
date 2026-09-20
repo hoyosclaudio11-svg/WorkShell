@@ -8,9 +8,10 @@ respaldos/
 # Descartes que dejan las pruebas manuales
 tests/_*_prueba.json
 
-# Datos locales de esta máquina (rutas absolutas del equipo)
-layouts.json
-ignoradas.json
-panel.json
-pendientes.json
-servicios.json
+# Datos locales de esta máquina (rutas absolutas del equipo).
+# Anclados a la raíz con / para no ignorar tests/fixtures/.
+/layouts.json
+/ignoradas.json
+/panel.json
+/pendientes.json
+/servicios.json

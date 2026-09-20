@@ -1,0 +1,10 @@
+[
+  {
+    "nombre": "Servicio de ejemplo",
+    "puerto": 9601,
+    "url": "http://localhost:9601",
+    "carpeta": "",
+    "lanzar": "start \"\" /min notepad.exe",
+    "nota": "ejemplo para la CI y documentación del formato"
+  }
+]
