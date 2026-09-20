@@ -5,6 +5,10 @@
 Invariantes que workshell.py asume al cargar: si alguno se rompe (a mano o por
 una edición fallida), el panel arranca raro y nadie sabe por qué. Acá quedan
 escritos los supuestos.
+
+Contra qué datos corre: si existen los de la máquina (layouts.json, etc.),
+valida esos; si no —por ejemplo en la CI, donde van gitignoreados a propósito—
+usa los ejemplos sanitizados de tests/fixtures/.
 """
 
 import json
@@ -12,10 +16,14 @@ import unittest
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 def cargar(nombre):
-    return json.loads((RAIZ / nombre).read_text(encoding="utf-8"))
+    real = RAIZ / nombre
+    if not real.exists():
+        real = FIXTURES / nombre
+    return json.loads(real.read_text(encoding="utf-8"))
 
 
 class TestLayouts(unittest.TestCase):
