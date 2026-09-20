@@ -1,0 +1,9 @@
+# Panel y capa Win32
+psutil
+nicegui
+fastapi
+pywin32
+Pillow
+
+# Pruebas de UI con navegador (_prueba_panel, _prueba_tarjetas_ui, ...)
+playwright

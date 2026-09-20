@@ -1,0 +1,16 @@
+__pycache__/
+.venv/
+_workshell.log
+
+# Snapshots de layouts: respaldo manual, no código
+respaldos/
+
+# Descartes que dejan las pruebas manuales
+tests/_*_prueba.json
+
+# Datos locales de esta máquina (rutas absolutas del equipo)
+layouts.json
+ignoradas.json
+panel.json
+pendientes.json
+servicios.json
