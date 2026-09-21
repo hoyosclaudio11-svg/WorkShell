@@ -1620,6 +1620,9 @@ with ui.row().classes('w-full items-stretch gap-4 flex-wrap'):
         ui.label('«Acomodar todo» reparte lo que está abierto y le busca el acceso directo '
                  'a cada app · «Aplicar» las lleva a su zona y abre lo que falte · «Releer» '
                  'trae sus posiciones reales').classes('leyenda-zona')
+        ui.label('¿Te gustó cómo quedaron? «Guardar como…» anota esta disposición en una '
+                 'organización nueva, y «Aplicar» la vuelve a armar igual cuando quieras'
+                 ).classes('leyenda-zona')
         ui.label('Una zona se saca con clic → «Eliminar zona»; si además no querés que '
                  '«Acomodar todo» la reponga, usá «Sacar y no volver a acomodar» (la lista '
                  'se ve en «Ignoradas»)').classes('leyenda-zona')
@@ -2555,6 +2558,35 @@ def capturar_ahora() -> None:
     ui.notify(f'Capturé {etiqueta}', type='positive')
 
 
+async def releer_en(zonas: list[dict]) -> tuple[int, int, int]:
+    """Relee la posición real de la ventana de cada zona y la escribe en la zona.
+
+    Devuelve (releidas, minimizadas, ausentes) para que cada llamada avise lo
+    que le importa. Es la parte que comparten «Releer» —actualizar la
+    organización en uso— y «Guardar como…», que desde el 21 sep 2026 captura la
+    disposición tal como está en el escritorio y no las coordenadas que el
+    layout tenía guardadas.
+
+    Las zonas que recibe son las que termina escribiendo. El barrido corre en
+    un hilo sobre una copia (instantánea) para no leer el modelo justo mientras
+    un arrastre le está escribiendo el rectángulo.
+    """
+    encontradas = await run.io_bound(ventanas.ubicaciones, [dict(z) for z in zonas])
+
+    releidas = minimizadas = ausentes = 0
+    for zona, ventana in zip(zonas, encontradas):
+        if ventana is None:
+            ausentes += 1
+        elif ventana['minimizada']:
+            # Reporta (-32000, -32000, 160, 28): si se leyera, la zona se iría
+            # al rincón y perdería su tamaño.
+            minimizadas += 1
+        else:
+            zona.update(ventanas.geometria_en_porcentaje(ventana['rect']))
+            releidas += 1
+    return releidas, minimizadas, ausentes
+
+
 async def sincronizar_posiciones() -> None:
     """Relee dónde está cada ventana asignada y mueve todas las zonas ahí.
 
@@ -2567,21 +2599,7 @@ async def sincronizar_posiciones() -> None:
         ui.notify('Este layout todavía no tiene ventanas asignadas', type='warning')
         return
 
-    # Instantánea: el barrido corre en un hilo y no debe leer el modelo mientras
-    # un arrastre le escribe el rectángulo.
-    encontradas = await run.io_bound(ventanas.ubicaciones, [dict(z) for z in asignadas])
-
-    releidas, minimizadas, ausentes = 0, 0, 0
-    for zona, ventana in zip(asignadas, encontradas):
-        if ventana is None:
-            ausentes += 1
-        elif ventana['minimizada']:
-            # Reporta (-32000, -32000, 160, 28): si se leyera, la zona se iría
-            # al rincón y perdería su tamaño.
-            minimizadas += 1
-        else:
-            zona.update(ventanas.geometria_en_porcentaje(ventana['rect']))
-            releidas += 1
+    releidas, minimizadas, ausentes = await releer_en(asignadas)
 
     if releidas:
         dibujar_zonas()
@@ -2637,14 +2655,21 @@ async def guardar_como() -> None:
     Es lo que permite tener varias: «Desarrollo», «Trading», «Edición»… Cada
     una guarda sus paneles, sus zonas y —si las tiene— sus accesos directos,
     que son los que hacen que Aplicar pueda reabrir lo que esté cerrado.
+
+    Antes de copiar relee dónde están las ventanas ahora mismo: lo que queda
+    guardado es la disposición tal como está en el escritorio («acomodá a mano,
+    Guardar como, y después Aplicar la vuelve a armar igual»). La relectura va
+    sobre la copia a propósito: el layout original conserva sus coordenadas.
     """
     with ui.dialog() as dialogo, ui.card().classes('gap-4'):
         ui.label('Guardar la organización actual como…').classes('panel-titulo')
+        ui.label('Se guardan las ventanas tal como están ahora en el escritorio'
+                 ).classes('leyenda-zona')
         nombre = ui.input(label='Nombre', value=f'{layout_actual} 2') \
             .props('dense outlined').classes('w-72')
         aviso = ui.label('').classes('leyenda-zona text-negative')
 
-        def confirmar() -> None:
+        async def confirmar() -> None:
             elegido = (nombre.value or '').strip()
             if not elegido:
                 aviso.text = 'Poné un nombre.'
@@ -2652,11 +2677,23 @@ async def guardar_como() -> None:
             if elegido in layouts:
                 aviso.text = f'Ya existe «{elegido}»: elegí otro nombre.'
                 return
-            layouts[elegido] = copia_del_layout(layout_actual)
-            zonas = len(layouts[elegido]['ventanas'])
+            nuevo = copia_del_layout(layout_actual)
+            asignadas = [z for z in nuevo['ventanas']
+                         if z.get('proceso') or z.get('exe') or z.get('lnk')]
+            releidas = minimizadas = ausentes = 0
+            if asignadas:
+                releidas, minimizadas, ausentes = await releer_en(asignadas)
+            layouts[elegido] = nuevo
+            zonas = len(nuevo['ventanas'])
             dialogo.close()
             usar_layout(elegido)
-            ui.notify(f'Layout «{elegido}» guardado con {zonas} zonas', type='positive')
+            partes = [f'Layout «{elegido}» guardado con {zonas} zonas']
+            if asignadas:
+                partes.append(f'{releidas} con la posición de ahora')
+                if minimizadas or ausentes:
+                    partes.append(f'{minimizadas + ausentes} conservaron su '
+                                  f'coordenada guardada')
+            ui.notify(' · '.join(partes), type='positive')
 
         with ui.row().classes('w-full justify-end gap-2'):
             ui.button('Cancelar', on_click=dialogo.close).props('dense flat')

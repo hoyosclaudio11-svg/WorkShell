@@ -21,6 +21,21 @@ El .bat:
 
 Panel: http://localhost:8080
 
+## Organizaciones
+
+Cada layout de `layouts.json` es una organización: sus paneles y qué ventana va
+a cada zona. Para armar una nueva:
+
+1. Acomodá las ventanas a mano, como te gusten.
+2. «Guardar como…» anota esa disposición tal como está ahora en el escritorio:
+   lee las posiciones reales; lo minimizado y lo ausente conservan la
+   coordenada que ya tenían, y el layout original no se toca.
+3. «Aplicar» la vuelve a armar igual cuando quieras, y abre lo que falte si la
+   zona sabe cómo (acceso directo).
+
+«Releer» hace la misma lectura pero sobre la organización en uso, sin crear
+otra.
+
 ## Estructura
 
 ```
